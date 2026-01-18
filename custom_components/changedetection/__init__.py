@@ -7,6 +7,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import aiohttp_client
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers import service
+from homeassistant.helpers.device_registry import DeviceEntryType
+
 
 from .api import ChangeDetectionClient
 from .const import (
@@ -25,8 +27,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.data.setdefault(DOMAIN, {})
     return True
 
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+
+    # Registra il DEVICE per questa config entry
+    device_registry = dr.async_get(hass)
+    device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},  # Unico per config entry
+        name=f"ChangeDetection.io {entry.title}",
+        manufacturer="ChangeDetection.io",
+        model="Web Monitor Instance",
+    )
+    
     session = aiohttp_client.async_get_clientsession(hass)
 
     client = ChangeDetectionClient(
