@@ -6,11 +6,11 @@ import async_timeout
 from typing import Any, Dict, List, Optional
 
 
-class ChangeDetectorApiError(Exception):
+class changedetectionApiError(Exception):
     """Exception raised for ChangeDetection.io API errors."""
 
 
-class ChangeDetectorClient:
+class changedetectionClient:
     """Client for interacting with ChangeDetection.io API."""
 
     def __init__(
@@ -39,7 +39,7 @@ class ChangeDetectorClient:
                 async with self._session.request(method, url, **kwargs) as resp:
                     if resp.status >= 400:
                         text = await resp.text()
-                        raise ChangeDetectorApiError(
+                        raise changedetectionApiError(
                             f"API error {resp.status} for {url}: {text}"
                         )
                     
@@ -48,9 +48,9 @@ class ChangeDetectorClient:
                         return await resp.json()
                     return await resp.text()
         except aiohttp.ClientError as err:
-            raise ChangeDetectorApiError(f"Connection error: {err}") from err
+            raise changedetectionApiError(f"Connection error: {err}") from err
         except asyncio.TimeoutError as err:
-            raise ChangeDetectorApiError(f"Timeout error: {err}") from err
+            raise changedetectionApiError(f"Timeout error: {err}") from err
 
     # ==================== WATCHES ====================
 

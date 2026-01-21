@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.exceptions import HomeAssistantError
 
-from .api import ChangeDetectorApiError
+from .api import changedetectionApiError
 from .const import DOMAIN
 
 
@@ -34,7 +34,7 @@ async def async_setup_entry(
             or f"Watch {uuid[:8]}"
         )
         entities.append(
-            ChangeDetectorRecheckButton(
+            changedetectionRecheckButton(
                 client=client,
                 uuid=uuid,
                 name=f"{name} Recheck",
@@ -44,7 +44,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ChangeDetectorRecheckButton(ButtonEntity):
+class changedetectionRecheckButton(ButtonEntity):
     """Button to recheck a watch."""
 
     _attr_icon = "mdi:refresh"
@@ -60,5 +60,5 @@ class ChangeDetectorRecheckButton(ButtonEntity):
         """Handle the button press."""
         try:
             await self._client.get_watch(self._uuid, recheck=True)
-        except ChangeDetectorApiError as err:
+        except changedetectionApiError as err:
             raise HomeAssistantError(f"Failed to recheck watch: {err}") from err
