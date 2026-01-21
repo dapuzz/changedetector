@@ -115,6 +115,14 @@ class ChangeDetectionWatchSensor(CoordinatorEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return additional attributes."""
         data = self.coordinator.data.get("watches", {}).get(self._uuid, {})
+        
+        # Converti last_checked in formato ISO8601
+        last_checked = None
+        if data.get("last_checked"):
+            last_checked = datetime.fromtimestamp(
+                data["last_checked"], tz=timezone.utc
+            ).isoformat()        
+            
         return {
             "uuid": self._uuid,
             "url": data.get("url"),
@@ -124,7 +132,7 @@ class ChangeDetectionWatchSensor(CoordinatorEntity, SensorEntity):
             "notification_muted": data.get("notification_muted", False),
             "method": data.get("method"),
             "fetch_backend": data.get("fetch_backend"),
-            "last_checked": data.get("last_checked"),
+            "last_checked": last_checked,
             "last_error": data.get("last_error"),
             "tags": data.get("tags", []),
         }
@@ -149,7 +157,7 @@ class ChangeDetectionSystemInfoSensor(CoordinatorEntity, SensorEntity):
             self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
-    def device_info(self) -> DeviceInfo:  # ← AGGIUNGI QUESTO
+    def device_info(self) -> DeviceInfo: 
         """Return device info to link entity with device."""
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry_id)},
