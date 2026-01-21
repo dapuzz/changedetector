@@ -8,6 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from .api import changedetectionApiError
 from .const import DOMAIN
@@ -38,6 +39,7 @@ async def async_setup_entry(
                 client=client,
                 uuid=uuid,
                 name=f"{name} Recheck",
+                entry_id=entry.entry_id,
             )
         )
 
@@ -49,12 +51,20 @@ class changedetectionRecheckButton(ButtonEntity):
 
     _attr_icon = "mdi:refresh"
 
-    def __init__(self, client, uuid: str, name: str) -> None:
+    def __init__(self, client, uuid: str, name: str, entry_id: str) -> None:
         """Initialize the button."""
         self._client = client
         self._uuid = uuid
+        self._entry_id = entry_id
         self._attr_name = name
         self._attr_unique_id = f"recheck_{uuid}"
+
+    @property
+    def device_info(self) -> DeviceInfo:  
+        """Return device info to link entity with device."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+        )
 
     async def async_press(self) -> None:
         """Handle the button press."""

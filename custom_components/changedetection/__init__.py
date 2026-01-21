@@ -13,6 +13,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 import voluptuous as vol
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
 
 from .api import changedetectionClient, changedetectionApiError
 from .const import (
@@ -77,7 +78,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up ChangeDetection.io from a config entry."""
     session = async_get_clientsession(hass)
-    client = changedetectionClient(
+    client = ChangeDetectorClient(
         entry.data[CONF_BASE_URL],
         entry.data[CONF_API_KEY],
         session,
@@ -90,7 +91,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             tags = await client.list_tags()
             systeminfo = await client.systeminfo()
             notifications = await client.get_notifications()
-        except changedetectionApiError as err:
+        except ChangeDetectorApiError as err:
             raise UpdateFailed(f"Error communicating with API: {err}") from err
         
         return {
@@ -109,6 +110,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     await coordinator.async_config_entry_first_refresh()
+
+    # ========== CREA IL DEVICE ==========
+    device_registry = dr.async_get(hass)
+    device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
+        name="ChangeDetection.io",
+        manufacturer="dgtlmoon",
+        model="Self-hosted Monitor",
+        sw_version=coordinator.data["systeminfo"].get("version", "unknown"),
+        configuration_url=entry.data[CONF_BASE_URL],
+    )
+    # ====================================
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {

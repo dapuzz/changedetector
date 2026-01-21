@@ -13,6 +13,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.device_registry import DeviceInfo 
+
 
 from .const import DOMAIN
 
@@ -38,6 +40,7 @@ async def async_setup_entry(
                 client=client,
                 uuid=uuid,
                 info=info,
+                entry_id=entry.entry_id,
             )
         )
 
@@ -49,18 +52,21 @@ async def async_setup_entry(
                 sensor_type="watch_count",
                 name="Watch Count",
                 icon="mdi:counter",
+                entry_id=entry.entry_id,
             ),
             changedetectionSystemInfoSensor(
                 coordinator=coordinator,
                 sensor_type="tag_count",
                 name="Tag Count",
                 icon="mdi:tag-multiple",
+                entry_id=entry.entry_id,
             ),
             changedetectionSystemInfoSensor(
                 coordinator=coordinator,
                 sensor_type="version",
                 name="Version",
                 icon="mdi:information",
+                entry_id=entry.entry_id,
             ),
         ]
     )
@@ -75,17 +81,25 @@ class changedetectionWatchSensor(CoordinatorEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.TIMESTAMP
 
     def __init__(
-        self, coordinator, client, uuid: str, info: dict[str, Any]
+        self, coordinator, client, uuid: str, info: dict[str, Any], entry_id: str
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._client = client
         self._uuid = uuid
+        self._entry_id = entry_id
         self._attr_unique_id = f"watch_{uuid}"
         self._attr_name = (
             info.get("title")
             or info.get("page_title")
             or f"Watch {uuid[:8]}"
+        )
+
+      @property
+    def device_info(self) -> DeviceInfo: 
+        """Return device info to link entity with device."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
         )
 
     @property
@@ -120,11 +134,12 @@ class changedetectionSystemInfoSensor(CoordinatorEntity, SensorEntity):
     """Sensor for ChangeDetection.io system information."""
 
     def __init__(
-        self, coordinator, sensor_type: str, name: str, icon: str
+        self, coordinator, sensor_type: str, name: str, icon: str, entry_id: str
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._sensor_type = sensor_type
+        self._entry_id = entry_id
         self._attr_unique_id = f"systeminfo_{sensor_type}"
         self._attr_name = f"ChangeDetection.io {name}"
         self._attr_icon = icon
@@ -132,6 +147,13 @@ class changedetectionSystemInfoSensor(CoordinatorEntity, SensorEntity):
         # State class solo per sensori numerici
         if sensor_type in ("watch_count", "tag_count"):
             self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def device_info(self) -> DeviceInfo:  # ← AGGIUNGI QUESTO
+        """Return device info to link entity with device."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+        )
 
     @property
     def native_value(self) -> int | str | None:
